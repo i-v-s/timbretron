@@ -1,0 +1,6 @@
+wavenet1/
+data/
+models/*/
+.idea/
+venv/
+*.zip

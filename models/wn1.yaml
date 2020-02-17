@@ -1,0 +1,65 @@
+modules:
+  conv3x3:
+    params: [c]
+    seq:
+      - conv2d: [c, 3, 1, 1]
+      - relu
+      - bn2d
+  conv1x1:
+    params: [c, o]
+    seq:
+      - conv2d: [c, 1]
+      - relu
+      - bn2d
+      - conv2d: [o, 1]
+      - relu
+      - bn2d
+  res:
+    params: [c, w, o]
+    add:
+      - seq:
+        - conv3x3: [c]
+        - conv1x1: [w, o]
+      - nop
+  up:
+    params: [o]
+    seq:
+      - convt2d: [o, 2, 2]
+      - prelu
+      - bn2d
+  down:
+    params: [o]
+    seq:
+      - maxpool2d: 2
+      - conv3x3: [o]
+  wn_block:
+    params: [c, s, e, k]  # internal_channels, skip_channels, end_channels, kernel_size
+    seq:
+      - wn_start: [c, s]
+      - wn_cell: [c, k, 1]
+      - wn_cell: [c, k]
+      - wn_cell: [c, k]
+      - wn_cell: [c, k]
+      - wn_end: [s, e]
+      - relu
+
+model:
+  input: [b, 168, 257] # 9 * 3 * 5 * 2, 16 * 3 * 5 * 2
+  seq:
+    #- wn_start: [32, 128] # x_channels, skip_channels
+    - convt1d: [256, 2, 2]
+    - wn_block: [32, 128, 64, 3]
+    - convt1d: [64, 4, 4]
+    - wn_block: [16, 64, 32, 3]
+    - convt1d: [32, 4, 4]
+    - wn_block: [8, 32, 16, 3]
+    - convt1d: [16, 4, 4]
+    - wn_block: [4, 16, 8, 3]
+    - convt1d: [12, 4, 4]
+    - wn_block: [4, 8, 4, 3]
+    - convt1d: [2, 2, 2]
+    #- wn_end: [64, 2]
+
+#    - wn_cell: [32, 3, 1] # internal_channels, kernel_size, dilation
+#    - wn_cell: [32, 3]
+  classes: 2
